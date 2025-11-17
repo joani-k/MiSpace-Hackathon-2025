@@ -29,8 +29,12 @@ export default function AboutTool() {
                 GL Ice Ops
               </h1>
               <p className="mt-2 text-sm md:text-base opacity-90">
-                Visual lake-ice products, CB-friendly palettes, and advisory routing for the Great Lakes.
-                Frontend: React • Vite • Tailwind • MapLibre. Backend: tiles, legends, narratives, routing.
+                IceScope GL is an active prototype for Great Lakes ice operations. It provides
+                4-day ice forecasts, advisory routing, and lake temperature outlooks in one
+                interface. Built with a people-first engineering mindset at the University of
+                Michigan, the tool emphasizes clarity, speed, and color-blind-safe visualization.
+                Frontend: React • Vite • Tailwind • MapLibre. Backend: a Python data pipeline
+                generating tiles, legends, GeoJSON, and narrative summaries for the UI.
               </p>
 
               {/* Quick actions */}
@@ -103,7 +107,7 @@ export default function AboutTool() {
         <div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-sky-500/10 via-emerald-500/10 to-fuchsia-500/10 ring-1 ring-white/10">
           <div className="grid gap-3 sm:grid-cols-3">
             <Stat title="UI latency" value="<100 ms" foot="Local interactions" />
-            <Stat title="Tile backend" value="/v1/tiles/ice" foot="Server provided" />
+            <Stat title="Tile backend" value="/data/tiles/ice" foot="Server provided" />
             <Stat title="Accessibility" value="CB-friendly" foot="High-contrast palettes" />
           </div>
         </div>
@@ -129,26 +133,63 @@ export default function AboutTool() {
             <h2 className="font-semibold">Data Notes</h2>
             <ul className="mt-2 text-sm space-y-3">
               <li>
-                Temps:{" "}
+                Temps:{' '}
                 <a className="underline" href="https://open-meteo.com" target="_blank" rel="noreferrer">
                   Open-Meteo
-                </a>{" "}
+                </a>{' '}
                 <span className="ml-2 text-xs opacity-80">current + hourly forecast</span>
               </li>
               <li>
-                Legends: <Code>/v1/legend</Code>
+                Legends: <Code>/data/legend</Code>
               </li>
               <li>
-                Frames: <Code>/v1/frames</Code>
+                Frames: <Code>/data/frames</Code>
               </li>
               <li>
-                Ice tiles: <Code>/v1/tiles/ice</Code>
+                Ice tiles: <Code>/data/tiles/ice</Code>
               </li>
               <li>
-                Routing: <Code>/v1/route/best</Code>
+                Routing: <Code>/data/route/best</Code>
               </li>
             </ul>
           </div>
+        </div>
+      </section>
+
+      {/* Modeling approach */}
+      <section className="mx-auto max-w-6xl px-4 pb-6">
+        <div className="glass rounded-2xl p-5">
+          <h2 className="font-semibold">
+            How We Built the Ice Forecast and Routing System – Our Modeling Approach
+          </h2>
+
+          <p className="mt-3 text-sm opacity-90 leading-relaxed">
+            We approached the problem like an operations team would: start from the data you can trust,
+            then layer on simple, explainable models that run fast. We used 21 days of GLSEA lake-surface
+            temperature NetCDF data as our training window and fit a global AR(1) model{' '}
+            <Code>T_{'{'}t+1{'}'} = αT_t + β</Code> to forecast surface temperatures four days ahead.
+          </p>
+
+          <p className="mt-3 text-sm opacity-90 leading-relaxed">
+            For the test period, we took the provided GLSEA initial condition, ran the AR(1) model forward,
+            and applied a physics-motivated heuristic to convert near-freezing water into ice concentration,
+            thickness, and coarse ice-type classes. Those gridded fields were downsampled into GeoJSON polygons
+            tagged by product and forecast time, which the frontend renders into interactive layers.
+          </p>
+
+          <p className="mt-3 text-sm opacity-90 leading-relaxed">
+            For routing, we combined a land mask (land = impassable) with the forecasted ice polygons to
+            generate a cost grid where heavier ice means higher cost. An A* pathfinding algorithm then
+            produces advisory tracks that avoid land and prefer lighter-ice corridors. The result is a
+            lightweight, fully local pipeline that connects raw Great Lakes datasets to clear maps, narrative
+            summaries, and routing suggestions directly in the browser.
+          </p>
+
+          <p className="mt-3 text-sm opacity-90 leading-relaxed">
+            Following a people-first engineering mindset at the University of Michigan, we built the interface
+            to be usable under pressure: readable layers, accessible labels, and a color-blind-friendly mode
+            so analysts, operators, and students can all use IceScope GL without barriers.
+          </p>
         </div>
       </section>
 
@@ -182,7 +223,8 @@ export default function AboutTool() {
             <li>UI: Tailwind with glass panels and accessible contrast.</li>
           </ul>
           <div className="mt-4 text-xs opacity-75">
-            This prototype stores minimal client preferences in <code>localStorage</code> (theme, palette) and does not collect analytics.
+            This prototype stores minimal client preferences in <code>localStorage</code> (theme, palette) and
+            does not collect analytics.
           </div>
         </div>
       </section>

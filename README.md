@@ -1,16 +1,67 @@
-# React + Vite
+# 📖 About the Project
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+In winter, Great Lakes operators need fast answers to questions like:
 
-Currently, two official plugins are available:
+- **What will ice look like along this route in the next few days?**
+- **Is there a safer path that still fits our schedule?**
+- **How are lake temperatures changing near key choke points?**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+IceScope GL (our **Great Lakes Ice Ops prototype**) pulls these pieces together in one interface with three panels:
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🧊 Ice Forecast
 
-## Expanding the ESLint configuration
+- 4-day ice products: **Concentration, Thickness, Type**
+- Playback bar with frame stepping and speed control
+- Legends fetched from backend (or fallbacks), **color-blind-friendly when enabled**
+- Export map snapshots for briefings and reports
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 🧭 Best Route
+
+Advisory routing across the Great Lakes with:
+
+- Port presets (**Detroit, Chicago, Duluth, etc.**)
+- Draggable start/destination markers + quick swap button
+- Vessel inputs: **draft, ice class, speed**
+
+Backend cost grid:
+
+- **Land polygons → impassable**
+- **Ice polygons → higher cost where concentration rises**
+
+A* pathfinder returns a route that:
+
+- Never crosses land  
+- Prefers lower-ice corridors  
+- Stays between requested ports  
+
+Returned as **GeoJSON**, overlaid on the live map, exportable or shareable via URL params.
+
+---
+
+## 🌡 Temps
+
+- Current lake temperatures + **48-hour outlook**
+- Powered by **Open-Meteo (no API key)**
+- °F / °C toggle
+- Quick-pick chips to jump between basins
+
+---
+
+## 🔮 Future Work
+
+- **Stronger forecast models**  
+  Replace the AR(1) baseline with ConvLSTM or other spatiotemporal models trained on multi-year GLSEA + ice data.
+- **Weather coupling**  
+  Add wind, air temperature, and wave forecasts (GFS/HRRR) so ice evolution responds to storms and cold outbreaks.
+- **Vessel-specific risk**  
+  Include draft, power, and certified ice class directly in the routing cost to produce ship-specific safe tracks.
+- **Multi-criteria routing**  
+  Let users choose between shortest time, lowest ice exposure, or lowest fuel use and display multiple candidate routes.
+- **Interactive “what-if” tools**  
+  Drag waypoints, adjust tolerance to heavy ice, lock corridors, and instantly re-run A* with updated constraints.
+- **Operational integration**  
+  Export layers and routes in standard formats usable by Coast Guard and commercial navigation systems.

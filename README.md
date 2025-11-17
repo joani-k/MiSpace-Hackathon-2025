@@ -1,3 +1,10 @@
+## 📄 License
+
+This project is open source under the **MIT License**.  
+Full license text is available in the `LICENSE` file in the repository.
+
+---
+
 # 📖 About the Project
 
 In winter, Great Lakes operators need fast answers to questions like:

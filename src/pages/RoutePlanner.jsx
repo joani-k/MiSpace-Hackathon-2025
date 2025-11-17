@@ -1,4 +1,4 @@
-// /src/pages/RoutePlanner.jsx  (or wherever this component lives)
+// /src/pages/RoutePlanner.jsx
 
 import {
   useCallback,
@@ -260,8 +260,7 @@ export default function RoutePlanner({ cbFriendly = false }) {
   }, [leftOpen, map])
 
   // -------------------------------------------------------------------
-  // Fetch route from backend – this is where "avoid land & minimize ice"
-  // MUST happen (e.g. A* over a cost grid built from ice_concentration.latest.geojson)
+  // Fetch route from backend – avoid land & minimize ice
   // -------------------------------------------------------------------
   const debounceRef = useRef(null)
   const abortRef = useRef(null)
@@ -294,8 +293,8 @@ export default function RoutePlanner({ cbFriendly = false }) {
           destLon: dest.lon,
           destLat: dest.lat,
           vessel,
-          timeIso: ROUTE_TIME_ISO,     // tell backend which ice snapshot to use
-          objective: 'min_ice',        // <-- backend: avoid land, minimize ice conc.
+          timeIso: ROUTE_TIME_ISO,
+          objective: 'min_ice',
           signal: ctrl.signal,
         })
 
@@ -412,6 +411,8 @@ export default function RoutePlanner({ cbFriendly = false }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  const isLoading = !map || busy || isPending
+
   // -------------------------------------------------------------------
   // Render
   // -------------------------------------------------------------------
@@ -428,8 +429,8 @@ export default function RoutePlanner({ cbFriendly = false }) {
             <div className="font-semibold">Route Planner</div>
             <div className="flex items-center gap-2">
               <div className="text-[11px] opacity-70">
-                {busy || isPending ? (
-                  'Computing…'
+                {isLoading ? (
+                  'Loading…'
                 ) : err ? (
                   <span className="text-red-500">Error</span>
                 ) : (
@@ -755,6 +756,18 @@ export default function RoutePlanner({ cbFriendly = false }) {
       >
         Great Lakes
       </button>
+
+      {/* Loading overlay */}
+      {isLoading && (
+        <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-zinc-950/60">
+          <div className="flex flex-col items-center gap-2 text-sm">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/40 border-t-transparent" />
+            <span className="opacity-80">
+              {!map ? 'Loading map…' : 'Computing route…'}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* MAP + LAYERS */}
       <MapBase cbFriendly={cbFriendly} onReady={setMap}>

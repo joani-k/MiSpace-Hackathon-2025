@@ -112,6 +112,5 @@ Returned as **GeoJSON**, overlaid on the live map, exportable or shareable via U
 ## 👍 Like This Project?
 
 If you enjoyed it, please give the repo a star ⭐  
-![GitHub Repo stars](https://img.shields.io/github/stars/yourrepo?style=social)
-
+![GitHub Repo stars](https://img.shields.io/github/stars/joani-k/MiSpace-Hackathon-2025?style=social)
 

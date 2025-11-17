@@ -386,7 +386,7 @@ function isPointInPolygon(point, polygon) {
     const [xi, yi] = polygon[i];
     const [xj, yj] = polygon[j];
     const intersect =
-      yi > py !== yj > py &&
+      (yi > py) !== (yj > py) &&
       px < ((xj - xi) * (py - yi)) / (yj - yi) + xi;
     if (intersect) isInside = !isInside;
   }
@@ -394,16 +394,15 @@ function isPointInPolygon(point, polygon) {
 }
 
 
-// 2. Grid setup
+// 2. Grid setup (internal to routing only; does NOT affect map visuals)
 const GRID_BOUNDS = {
   minLon: -93.0,
   maxLon: -80.0,
   minLat: 41.5,
   maxLat: 49.0,
 };
-const GRID_WIDTH = 120; // columns (lon)
-const GRID_HEIGHT = 90; // rows (lat)
-
+const GRID_WIDTH = 80;  // columns (lon)
+const GRID_HEIGHT = 60; // rows (lat)
 
 const OPEN_WATER_COST = 1;
 const ICE_COST_MULTIPLIER = 3; // Cost = 1 + (ice_percent * 3)
@@ -446,14 +445,12 @@ function findPathAStar(costGrid, startNode, endNode) {
   const gScores = new Map();
   gScores.set(`${startNode.x},${startNode.y}`, 0);
 
-
   while (openList.length > 0) {
     let lowIndex = 0;
     for (let i = 0; i < openList.length; i++) {
       if (openList[i].f < openList[lowIndex].f) lowIndex = i;
     }
     const currentNode = openList.splice(lowIndex, 1)[0];
-
 
     if (currentNode.x === endNode.x && currentNode.y === endNode.y) {
       const path = [];
@@ -465,15 +462,12 @@ function findPathAStar(costGrid, startNode, endNode) {
       return path.reverse();
     }
 
-
     const currentKey = `${currentNode.x},${currentNode.y}`;
     closedList.add(currentKey);
-
 
     for (const neighbor of getNeighbors(currentNode)) {
       const neighborKey = `${neighbor.x},${neighbor.y}`;
       if (closedList.has(neighborKey)) continue;
-
 
       // Land is impassable: Infinity cost
       if (costGrid[neighbor.y][neighbor.x] === Infinity) {
@@ -481,19 +475,15 @@ function findPathAStar(costGrid, startNode, endNode) {
         continue;
       }
 
-
       const isDiagonal =
         neighbor.x !== currentNode.x && neighbor.y !== currentNode.y;
       const moveCost = isDiagonal ? DIAGONAL_COST : 1;
       const gScore =
-        currentNode.g +
-        costGrid[neighbor.y][neighbor.x] * moveCost;
-
+        currentNode.g + costGrid[neighbor.y][neighbor.x] * moveCost;
 
       if (gScore < (gScores.get(neighborKey) || Infinity)) {
         gScores.set(neighborKey, gScore);
         const fScore = gScore + heuristic(neighbor, endNode);
-
 
         const openNeighbor = openList.find(
           (n) => n.x === neighbor.x && n.y === neighbor.y
@@ -528,7 +518,6 @@ function lonLatToGrid(lon, lat) {
       (GRID_BOUNDS.maxLat - GRID_BOUNDS.minLat)) *
     GRID_HEIGHT; // inverted y
 
-
   const gx = Math.max(0, Math.min(Math.round(x), GRID_WIDTH - 1));
   const gy = Math.max(0, Math.min(Math.round(y), GRID_HEIGHT - 1));
   return { x: gx, y: gy };
@@ -554,14 +543,14 @@ function createCostGrid(landPolygons, icePolygons) {
     .fill(null)
     .map(() => Array(GRID_WIDTH).fill(OPEN_WATER_COST));
 
-
-  // Step 1: mark land (Infinity)
+  // ---- Step 1: mark land (Infinity) ----
   for (let y = 0; y < GRID_HEIGHT; y++) {
     for (let x = 0; x < GRID_WIDTH; x++) {
       const [lon, lat] = gridToLonLat(x, y);
 
-
       for (const feature of landPolygons.features) {
+        if (!feature.geometry) continue;
+
         if (feature.geometry.type === "Polygon") {
           const polygon = feature.geometry.coordinates[0];
           if (isPointInPolygon([lon, lat], polygon)) {
@@ -583,41 +572,76 @@ function createCostGrid(landPolygons, icePolygons) {
     }
   }
 
+  // Helper: rasterize a single polygon ring into the grid using a bounding box
+  function rasterizePolyRing(ring, iceValue) {
+    if (!ring || ring.length === 0) return;
 
-  // Step 2: overlay ice cost
-  for (let y = 0; y < GRID_HEIGHT; y++) {
-    for (let x = 0; x < GRID_WIDTH; x++) {
-      if (grid[y][x] === Infinity) continue;
-      const [lon, lat] = gridToLonLat(x, y);
+    let minLon = Infinity;
+    let maxLon = -Infinity;
+    let minLat = Infinity;
+    let maxLat = -Infinity;
 
+    for (const [lon, lat] of ring) {
+      if (lon < minLon) minLon = lon;
+      if (lon > maxLon) maxLon = lon;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+    }
 
-      for (const feature of icePolygons.features || []) {
-        if (!feature.geometry) continue;
-        if (feature.geometry.type === "Polygon") {
-          const polygon = feature.geometry.coordinates[0];
-          if (isPointInPolygon([lon, lat], polygon)) {
-            const iceValue = feature.properties?.value || 0;
-            grid[y][x] =
-              OPEN_WATER_COST + iceValue * ICE_COST_MULTIPLIER;
-            break;
-          }
-        } else if (feature.geometry.type === "MultiPolygon") {
-          let hit = false;
-          for (const polygon of feature.geometry.coordinates) {
-            if (isPointInPolygon([lon, lat], polygon[0])) {
-              const iceValue = feature.properties?.value || 0;
-              grid[y][x] =
-                OPEN_WATER_COST + iceValue * ICE_COST_MULTIPLIER;
-              hit = true;
-              break;
-            }
-          }
-          if (hit) break;
+    // Clamp to grid bounds
+    minLon = Math.max(minLon, GRID_BOUNDS.minLon);
+    maxLon = Math.min(maxLon, GRID_BOUNDS.maxLon);
+    minLat = Math.max(minLat, GRID_BOUNDS.minLat);
+    maxLat = Math.min(maxLat, GRID_BOUNDS.maxLat);
+
+    if (minLon > maxLon || minLat > maxLat) return; // polygon outside domain
+
+    const topLeft = lonLatToGrid(minLon, maxLat);
+    const bottomRight = lonLatToGrid(maxLon, minLat);
+
+    const xMin = Math.min(topLeft.x, bottomRight.x);
+    const xMax = Math.max(topLeft.x, bottomRight.x);
+    const yMin = Math.min(topLeft.y, bottomRight.y);
+    const yMax = Math.max(topLeft.y, bottomRight.y);
+
+    const cost = OPEN_WATER_COST + iceValue * ICE_COST_MULTIPLIER;
+
+    for (let y = yMin; y <= yMax; y++) {
+      const row = grid[y];
+      for (let x = xMin; x <= xMax; x++) {
+        if (row[x] === Infinity) continue; // land stays impassable
+        const [lon, lat] = gridToLonLat(x, y);
+        if (isPointInPolygon([lon, lat], ring)) {
+          row[x] = cost;
         }
       }
     }
   }
 
+  // ---- Step 2: overlay ice cost using bounding boxes (fast) ----
+  const iceFeatures = (icePolygons && icePolygons.features) || [];
+  for (const feature of iceFeatures) {
+    if (!feature.geometry) continue;
+
+    const props = feature.properties || {};
+    const iceValue =
+      props.value ??
+      props.ice ??
+      props.ice_pct ??
+      0;
+
+    if (iceValue <= 0) continue; // no extra cost
+
+    if (feature.geometry.type === "Polygon") {
+      const ring = feature.geometry.coordinates[0];
+      rasterizePolyRing(ring, iceValue);
+    } else if (feature.geometry.type === "MultiPolygon") {
+      for (const polygon of feature.geometry.coordinates) {
+        const ring = polygon[0];
+        rasterizePolyRing(ring, iceValue);
+      }
+    }
+  }
 
   return grid;
 }
@@ -632,22 +656,18 @@ function getCostGrid() {
     return costGridPromise;
   }
 
-
   costGridPromise = (async () => {
     console.log("[routing] building cost grid once…");
-
 
     // Try to use the ML-generated GeoJSON used by the ice layer
     const mlIce = await loadSampleJSON(
       "ice_concentration.latest.geojson"
     );
 
-
     const icePolygons =
       mlIce && mlIce.type === "FeatureCollection"
         ? mlIce
         : ICE_DATA; // fallback
-
 
     if (!mlIce) {
       console.warn(
@@ -655,12 +675,10 @@ function getCostGrid() {
       );
     }
 
-
     const grid = createCostGrid(LAND_DATA, icePolygons);
     console.log("[routing] cost grid ready.");
     return grid;
   })();
-
 
   return costGridPromise;
 }
@@ -674,17 +692,14 @@ function getCostGrid() {
 export const API = {
   BASE: "local-sample-data-only",
 
-
   WINDOWS: {
     HOURS_24: { label: "±12h", beforeHours: 12, afterHours: 12 },
     DAYS_6: { label: "±3d", beforeHours: 72, afterHours: 12 },
   },
 
-
   async listFrames({ beforeHours, afterHours }) {
     const data = await loadSampleJSON("frames.json");
     if (data?.frames?.length) return data;
-
 
     // fallback: generate hourly frames in a window
     const bh = Number.isFinite(beforeHours) ? beforeHours : 12;
@@ -700,7 +715,6 @@ export const API = {
     return { frames };
   },
 
-
   async legend({ product, palette }) {
     const tryFiles = [
       `legend.${product}.${palette}.json`,
@@ -711,7 +725,6 @@ export const API = {
       const data = await loadSampleJSON(f);
       if (data?.breaks && data?.colors) return data;
     }
-
 
     // hard fallback
     return {
@@ -747,13 +760,11 @@ export const API = {
     };
   },
 
-
   async narrative({ isoTime }) {
     const data = await loadSampleJSON("narratives.json");
     const text = data?.[isoTime] || synthNarrative(isoTime);
     return { text };
   },
-
 
   /**
    * A* ROUTING:
@@ -765,14 +776,11 @@ export const API = {
     let routeGeoJSON;
     let notes = `A* route (grid: ${GRID_WIDTH}x${GRID_HEIGHT}).`;
 
-
     try {
       const costGrid = await getCostGrid();
 
-
       const startNode = lonLatToGrid(startLon, startLat);
       const endNode = lonLatToGrid(destLon, destLat);
-
 
       if (costGrid[startNode.y][startNode.x] === Infinity) {
         throw new Error("Start point is on land.");
@@ -781,17 +789,14 @@ export const API = {
         throw new Error("End point is on land.");
       }
 
-
       const pathNodes = findPathAStar(costGrid, startNode, endNode);
       if (!pathNodes) {
         throw new Error("No A* path found.");
       }
 
-
       const coordinates = pathNodes.map((node) =>
         gridToLonLat(node.x, node.y)
       );
-
 
       routeGeoJSON = {
         type: "FeatureCollection",
@@ -855,7 +860,6 @@ export const API = {
       };
     }
 
-
     return { route: routeGeoJSON, notes };
   },
 };
@@ -885,6 +889,3 @@ export const MAP = {
   CENTER: [-85.0, 45.0],
   ZOOM: 5,
 };
-
-
-

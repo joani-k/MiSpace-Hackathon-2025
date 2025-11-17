@@ -72,3 +72,36 @@ Returned as **GeoJSON**, overlaid on the live map, exportable or shareable via U
   Drag waypoints, adjust tolerance to heavy ice, lock corridors, and instantly re-run A* with updated constraints.
 - **Operational integration**  
   Export layers and routes in standard formats usable by Coast Guard and commercial navigation systems.
+
+  ---
+
+## 🌐 Live Demo
+
+🔗 **https://mi-space-hackathon-2025.vercel.app**
+
+---
+
+## 🛠 Built With
+
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
+![xarray](https://img.shields.io/badge/xarray-EE4C2C?logo=python&logoColor=white)
+![NumPy](https://img.shields.io/badge/NumPy-013243?logo=numpy&logoColor=white)
+![NetCDF](https://img.shields.io/badge/NetCDF-5DADE2)
+![GeoJSON](https://img.shields.io/badge/GeoJSON-000000?logo=json&logoColor=white)
+
+![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind-38BDF8?logo=tailwindcss&logoColor=white)
+![MapLibre](https://img.shields.io/badge/MapLibre-40B5A4?logo=mapbox&logoColor=white)
+
+![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000000?logo=vercel&logoColor=white)
+
+---
+
+## 👍 Like This Project?
+
+If you enjoyed it, please give the repo a star ⭐  
+![GitHub Repo stars](https://img.shields.io/github/stars/yourrepo?style=social)
+
+

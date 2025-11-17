@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Glass aesthetic with adaptive depth and smoother shadow */
+.glass {
+  @apply bg-white/10 dark:bg-[#1e1e1e]/70 backdrop-blur-xl 
+         border border-white/20 dark:border-[#2a2a2a] 
+         shadow-[0_8px_30px_rgba(0,0,0,0.2)]
+         transition-colors duration-300;
+}
+
+/* Improved focus ring with subtle motion handling */
+:focus-visible {
+  @apply outline-none ring-2 ring-accent/70 dark:ring-accent/60 
+         rounded-md ring-offset-1 ring-offset-transparent;
+}
+
+/* Accent color system (matches data-attribute on <html>) */
+:root {
+  --accent: #3b82f6; /* blue-500 */
+}
+
+
+
+/* =========================
+   DARK MODE OVERHAUL
+   ========================= */
+
+/* Palette */
+[data-theme='dark'] {
+    --accent: #4ea8ff;              /* cobalt sky */
+    --bg-root: #0b1220;             /* deep navy base */
+    --bg-panel: #101a2b;            /* panel glass base */
+    --bg-panel-hover: #15233a;      /* hover lift */
+    --bd-panel: #29466e;            /* panel border */
+    --text-strong: #e6edf3;         /* primary text */
+    --text-muted: #9fb3c8;          /* secondary text */
+    --chip: #17233a;                /* chip/bg for pills */
+    --shadow-strong: 0 14px 42px rgba(2, 10, 28, 0.65);
+  }
+  
+  /* Page */
+  [data-theme='dark'] body {
+    background-color: var(--bg-root);
+    color: var(--text-strong);
+  }
+  
+  /* Header/Footer bars if they use .glass */
+  [data-theme='dark'] header.glass,
+  [data-theme='dark'] footer.glass {
+    background-color: rgba(11, 18, 32, 0.85);
+    border-color: rgba(73, 100, 140, 0.35);
+    color: var(--text-strong);
+  }
+  
+  /* Glass panels */
+  [data-theme='dark'] .glass {
+    background-color: var(--bg-panel);
+    border-color: var(--bd-panel);
+    color: var(--text-strong);
+    box-shadow: var(--shadow-strong);
+  }
+  [data-theme='dark'] .glass:hover {
+    background-color: var(--bg-panel-hover);
+    border-color: #3c64a0;
+  }
+  
+  /* Text clarity inside panels */
+  [data-theme='dark'] .glass :is(p, span, small, label, div) {
+    color: var(--text-strong);
+  }
+  [data-theme='dark'] .glass .opacity-70,
+  [data-theme='dark'] .glass .opacity-75,
+  [data-theme='dark'] .glass .opacity-80 {
+    color: var(--text-muted);
+    opacity: 1; /* stop stacking low contrast */
+  }
+  
+  /* Nav buttons and chips (your NavLink, small pills) */
+  [data-theme='dark'] a[aria-current="page"],
+  [data-theme='dark'] .glass .chip,
+  [data-theme='dark'] .glass .pill {
+    background-color: var(--chip);
+    color: var(--text-strong);
+    border-color: #2a4776;
+  }
+  
+  /* Buttons inside panels */
+  [data-theme='dark'] .glass button {
+    color: var(--text-strong);
+    background-color: var(--chip);
+    border: 1px solid #2a4776;
+  }
+  [data-theme='dark'] .glass button:hover {
+    background-color: #1b2c4a;
+    border-color: #3965a7;
+  }
+  
+  /* Inputs/selects */
+  [data-theme='dark'] .glass :is(input, select, textarea) {
+    background-color: #0f1b32;
+    color: var(--text-strong);
+    border: 1px solid #2a4776;
+  }
+  [data-theme='dark'] .glass :is(input, select, textarea)::placeholder {
+    color: rgba(230, 237, 243, 0.55);
+  }
+  
+  /* Range slider (opacity/FPS) */
+  [data-theme='dark'] input[type="range"] {
+    accent-color: var(--accent);
+  }
+  [data-theme='dark'] input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    background: #1a2a49;
+    border-radius: 999px;
+  }
+  [data-theme='dark'] input[type="range"]::-webkit-slider-thumb {
+    width: 14px; height: 14px; margin-top: -4px;
+    background: var(--accent);
+    border-radius: 999px;
+    border: 1px solid #0e223d;
+  }
+  
+  /* Focus ring uses accent */
+  [data-theme='dark'] :focus-visible {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  
+  /* Status rail / kbd badges */
+  [data-theme='dark'] kbd,
+  [data-theme='dark'] .glass .kbd {
+    background: var(--chip);
+    color: var(--text-strong);
+    border: 1px solid #2a4776;
+  }
+  
+  /* Scrollbars */
+  [data-theme='dark'] ::-webkit-scrollbar-thumb {
+    background-color: rgba(78, 168, 255, 0.35);
+    border-radius: 8px;
+  }
+  

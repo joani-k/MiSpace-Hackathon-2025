@@ -1,0 +1,16 @@
+
+{
+    "title": "Ice type",
+    "unit": "",
+    "breaks": [0, 10, 40, 70, 95, 100],
+    "labels": ["Open water","New/grey","First-year","Thick first-year","Multi-year",""],
+    "colors": [
+      "#f0f9ff",
+      "#c7e9b4",
+      "#7fcdbb",
+      "#41b6c4",
+      "#2c7fb8",
+      "#253494"
+    ]
+  }
+  

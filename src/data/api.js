@@ -232,6 +232,7 @@ const LAND_DATA = {
         ],
       },
     },
+    // Original east-side lower Michigan
     {
       type: "Feature",
       properties: { name: "Lower Peninsula (East)" },
@@ -239,7 +240,7 @@ const LAND_DATA = {
         type: "Polygon",
         coordinates: [
           [
-            [-84.7, 45.8],
+            [-84.7, 45.0],
             [-84.7, 45.0],
             [-84.0, 44.0],
             [-83.5, 43.0],
@@ -251,7 +252,27 @@ const LAND_DATA = {
             [-83.0, 45.0],
             [-83.5, 45.5],
             [-84.0, 45.7],
-            [-84.7, 45.8],
+            [-84.7, 45.0],
+          ],
+        ],
+      },
+    },
+    // NEW: Central / west lower Michigan block (lat < ~44.8 so Straits stay open)
+    {
+      type: "Feature",
+      properties: { name: "Lower Peninsula (Core)" },
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-86.8, 44.8],
+            [-84.5, 44.8],
+            [-84.2, 43.3],
+            [-84.1, 42.3],
+            [-84.5, 41.7],
+            [-86.5, 41.7],
+            [-86.8, 42.5],
+            [-86.8, 44.8],
           ],
         ],
       },
@@ -684,6 +705,40 @@ function getCostGrid() {
 }
 
 
+// 7. Snap a node that lands on Infinity to nearest water cell
+function findNearestWater(costGrid, node, maxRadius = 12) {
+  const { x, y } = node;
+  let best = null;
+  let bestDist2 = Infinity;
+
+  for (let r = 1; r <= maxRadius; r++) {
+    // search ring of Chebyshev radius r
+    for (let dx = -r; dx <= r; dx++) {
+      for (let dy = -r; dy <= r; dy++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        const nx = x + dx;
+        const ny = y + dy;
+        if (
+          nx < 0 ||
+          nx >= GRID_WIDTH ||
+          ny < 0 ||
+          ny >= GRID_HEIGHT
+        )
+          continue;
+        if (costGrid[ny][nx] === Infinity) continue;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < bestDist2) {
+          bestDist2 = d2;
+          best = { x: nx, y: ny };
+        }
+      }
+    }
+    if (best) break;
+  }
+  return best;
+}
+
+
 /* ------------------------------------------------------------------ */
 /*  PUBLIC API                                                         */
 /* ------------------------------------------------------------------ */
@@ -771,6 +826,7 @@ export const API = {
    * - uses cost grid built from LAND_DATA + ice_concentration.latest.geojson
    * - land = Infinity cost (impassable)
    * - water cost = 1 + ice_value * ICE_COST_MULTIPLIER
+   * - start/end snapped to nearest water cell if dropped on land
    */
   async bestRoute({ startLon, startLat, destLon, destLat, vessel }) {
     let routeGeoJSON;
@@ -779,14 +835,21 @@ export const API = {
     try {
       const costGrid = await getCostGrid();
 
-      const startNode = lonLatToGrid(startLon, startLat);
-      const endNode = lonLatToGrid(destLon, destLat);
+      let startNode = lonLatToGrid(startLon, startLat);
+      let endNode = lonLatToGrid(destLon, destLat);
 
+      // Snap start/end from land into nearest water cell
       if (costGrid[startNode.y][startNode.x] === Infinity) {
-        throw new Error("Start point is on land.");
+        const snapped = findNearestWater(costGrid, startNode);
+        if (!snapped) throw new Error("No water near start point.");
+        startNode = snapped;
+        notes += " Start snapped offshore.";
       }
       if (costGrid[endNode.y][endNode.x] === Infinity) {
-        throw new Error("End point is on land.");
+        const snapped = findNearestWater(costGrid, endNode);
+        if (!snapped) throw new Error("No water near destination.");
+        endNode = snapped;
+        notes += " Destination snapped offshore.";
       }
 
       const pathNodes = findPathAStar(costGrid, startNode, endNode);

@@ -58,27 +58,6 @@ function NavButton({ to, end, children, label, onClick, onHover }) {
   )
 }
 
-function StatusPill({ status }) {
-  const cls =
-    status === 'ok'
-      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-      : status === 'down'
-      ? 'bg-red-500/15 text-red-600 dark:text-red-400'
-      : 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-400'
-  const dot =
-    status === 'ok' ? 'bg-emerald-500' : status === 'down' ? 'bg-red-500' : 'bg-zinc-400'
-  const label = status === 'ok' ? 'API online' : status === 'down' ? 'API down' : 'Checking'
-  return (
-    <span
-      className={`ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] ${cls}`}
-      aria-live="polite"
-    >
-      <span className={`inline-block h-1.5 w-1.5 rounded-full ${dot}`} />
-      {label}
-    </span>
-  )
-}
-
 function AppShell() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -125,39 +104,6 @@ function AppShell() {
     else url.searchParams.delete('demo')
     window.history.replaceState(null, '', url.toString())
     window.dispatchEvent(new CustomEvent('demo-change', { detail: { enabled: demo } }))
-  }, [demo])
-
-  const [apiStatus, setApiStatus] = useState('checking')
-  useEffect(() => {
-    if (demo) {
-      setApiStatus('ok')
-      return
-    }
-    let alive = true
-    let controller = new AbortController()
-    const ping = async () => {
-      try {
-        setApiStatus('checking')
-        controller.abort()
-        controller = new AbortController()
-        const r = await fetch(`${API.BASE}/v1/healthz`, {
-          cache: 'no-store',
-          signal: controller.signal,
-        })
-        if (!alive) return
-        setApiStatus(r.ok ? 'ok' : 'down')
-      } catch {
-        if (!alive) return
-        setApiStatus('down')
-      }
-    }
-    ping()
-    const id = setInterval(ping, 15000)
-    return () => {
-      alive = false
-      controller.abort()
-      clearInterval(id)
-    }
   }, [demo])
 
   // Simulated refresh when leaving /routes (Best Route) to clear heavy state
@@ -370,7 +316,6 @@ function AppShell() {
           <div className="flex items-center gap-3">
             <span className="font-semibold tracking-tight">GL Ice Ops</span>
             <span className="text-xs opacity-70">Forecast &amp; Routing</span>
-            <StatusPill status={apiStatus} />
           </div>
 
           <div className="hidden sm:flex items-center gap-2">

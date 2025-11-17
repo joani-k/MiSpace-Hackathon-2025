@@ -7,6 +7,11 @@ Full license text is available in the `LICENSE` file in the repository.
   <img src="./github_logo.png" width="200">
 </p>
 
+## How We Built the Ice Forecast and Routing System – Our Modeling Approach
+
+We approached the problem like an operations team would: start from the data you can trust, then layer on simple, explainable models that run fast. We used 21 days of GLSEA lake-surface temperature NetCDF data as our training window and fit a global AR(1) model \((T_{t+1} = \alpha T_t + \beta)\) to forecast surface temperatures four days ahead. For the test period, we took the provided GLSEA initial condition, ran the AR(1) model forward, and applied a physics-motivated heuristic to convert near-freezing water into ice concentration, thickness, and coarse ice-type classes.
+
+Those gridded fields were downsampled into GeoJSON polygons tagged by product and forecast time, which the frontend renders as interactive forecast layers. For routing, we combined a land mask (land = impassable) with the forecasted ice polygons to generate a cost grid where heavier ice means higher cost. An A* pathfinding algorithm then produces routes that avoid land and prefer lower-ice corridors. The result is a lightweight, fully local pipeline that turns raw Great Lakes datasets into clear maps, narrative summaries, and advisory ship routes in the browser.
 
 ---
 

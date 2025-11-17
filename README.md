@@ -3,6 +3,11 @@
 This project is open source under the **MIT License**.  
 Full license text is available in the `LICENSE` file in the repository.
 
+<p align="center">
+  <img src="./github_logo.png" width="200">
+</p>
+
+
 ---
 
 # 📖 About the Project
